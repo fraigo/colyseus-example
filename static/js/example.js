@@ -208,7 +208,7 @@ var button_right = document.getElementById("move-right");
   })
 
   canvas.addEventListener("mouseup", function (e) {
-    cancelKey();
+    //cancelKey();
   })
 
   canvas.addEventListener("touchstart", function (e) {
@@ -218,7 +218,6 @@ var button_right = document.getElementById("move-right");
     var py=originY*1000/canvas.clientHeight;
     var d1= (px/py)>1;
     var d2= (px/(1000-py))>1;
-    console.log("Touch", px, py, d1,d2, e);
     if (d1 && d2){
       keyDown(KEY_RIGHT);
     }
@@ -234,7 +233,7 @@ var button_right = document.getElementById("move-right");
   })
 
   canvas.addEventListener("touchend", function (e) {
-    cancelKey();
+    //cancelKey();
   })
   
   function keyDown(key){

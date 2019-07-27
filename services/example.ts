@@ -1,73 +1,10 @@
 import { Room } from "colyseus";
 import { Schema, type, MapSchema } from "@colyseus/schema";
+import { Item, GameState } from "./common/Item";
 
-var colors = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
+var COLORS = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
 var FLAG_TIMEOUT = 250;
-var STOLE_TIMEOUT = 30;
-
-export class Item extends Schema {
-    @type("number")
-    index = 0;
-    
-    @type("number")
-    x = Math.floor(Math.random() * 800) + 100;
-
-    @type("number")
-    y = Math.floor(Math.random() * 700) + 200;
-
-    @type("number")
-    radius = 10;
-
-    @type("number")
-    width = 0;
-
-    @type("number")
-    height = 0;
-
-    @type("number")
-    health = 100;
-
-    @type("string")
-    label = "";
-
-    @type("string")
-    type = "item";
-
-    @type("string")
-    bgcolor = null;
-
-    @type("number")
-    fontSize = 30;
-
-    @type("boolean")
-    visible = true;
-
-    @type("string")
-    sprite = "";
-
-    @type("number")
-    spriteX = 0;
-    
-    @type("number")
-    spriteY = 0;
-
-
-    collission = function(item: Item){
-        var radius=0;
-        if (!this.visible || !item.visible){
-            return false;
-        }
-        if (this.radius && item.radius){
-            radius = this.radius+item.radius;
-        }
-        if (radius){
-            var dist2=(this.x-item.x)*(this.x-item.x)+(this.y-item.y)*(this.y-item.y);
-            return dist2<radius*radius;
-        }
-        return false;
-    }
-
-}
+var STOLE_TIMEOUT = 50;
 
 export class Player extends Item {
     
@@ -85,13 +22,145 @@ export class Player extends Item {
     stoleTimeout = 0;
 
     @type("number")
+    portalTimeout = 0;
+
+    @type("number")
     points = 0;
 
-    
+    collisionWith = function(player: Player){
+        console.log(player.id + " collition " + this.id);
+        if (this.flagTimeout && this.stoleTimeout==0){
+            console.log(player.id + " stole " + this.id);
+            this.flagTimeout=0;
+            player.flagTimeout=FLAG_TIMEOUT;
+            player.stoleTimeout=STOLE_TIMEOUT;
+        }
+        else if (player.flagTimeout && player.stoleTimeout==0){
+            console.log(this.id + " stole " + player.id);
+            player.flagTimeout=0;
+            this.flagTimeout=FLAG_TIMEOUT;
+            this.stoleTimeout=STOLE_TIMEOUT;
+        }
+    }
+
+    update = function(state:State){
+        if (this.stoleTimeout){
+            this.stoleTimeout--;
+        }
+        if (this.portalTimeout){
+            this.portalTimeout--;
+        }
+        if (this.flagTimeout){
+            this.flagTimeout--;
+            if (this.flagTimeout==0){
+                state.positionObject(state.items["flag"],150,100,850,800);
+                state.items[ "flag" ].visible=true;
+            }
+        }
+        if (this.flagTimeout){
+            this.points+=0.1;
+            this.label=""+Math.round(this.points)
+        }
+        this.spriteX = (this.spriteX+1) % 3;
+    }
+
+    move = function(x:number,y:number){
+        var vel = this.flagTimeout ? 8 : 10;
+        var radius = this.radius;
+        if (x) {
+            var oldX=this.x;
+            this.x += x * vel;
+            var newX = this.x ;
+            for (var item in this.items){
+                if (this.items[item].type=="block" && this.items[item].collission(this)){
+                    this.x = oldX;
+                }
+            }
+            if (newX < radius || newX > 1000-radius){
+                this.x = oldX;
+            }
+            if (x>0){
+                this.spriteY = 2; 
+            }else{
+                this.spriteY = 1; 
+            }
+
+        } else if (y) {
+            var oldY=this.y;
+            this.y += y * vel;
+            var newY=this.y;
+            for (var item in this.items){
+                if (this.items[item].type=="block" && this.items[item].collission(this)){
+                    this.y = oldY;
+                    break;
+                }
+            }
+            if (newY < radius || newY > 1000-radius){
+                this.y = oldY;
+            }
+            if (y>0){
+                this.spriteY = 0; 
+            }else{
+                this.spriteY = 3; 
+            }
+        }
+    }
+
 }
 
+export class Portal extends Item {
 
-export class State extends Schema {
+    sprite = "portal1";
+    width = 60;
+    height = 60;
+    radius = 10;
+    type = "portal";
+    
+    @type("number")
+    portalNumber = 0;
+
+    transportPlayer = function(player:Player, state:State){
+        var portalNumber = this.portalNumber;
+        while(portalNumber==this.portalNumber){
+            portalNumber = Math.floor(Math.random()*4)+1;
+        } 
+        var newPortal = state.items["portal"+portalNumber];
+        player.x=newPortal.x;
+        player.y=newPortal.y;
+        player.portalTimeout=40;
+    }
+
+
+
+}
+
+export class Block extends Item {
+
+    sprite = "block1";
+    width = 40;
+    height = 40;
+    radius = 15;
+    type = "block";
+
+}
+
+export class Flag extends Item {
+
+    sprite = "flag1";
+    width = 60;
+    height = 60;
+    radius = 25;
+    type = "flag";
+
+    collisionWith = function(player:Player){
+        this.visible=false;
+        player.flagTimeout=FLAG_TIMEOUT;
+        player.stoleTimeout=STOLE_TIMEOUT;
+    }
+
+}
+
+export class State extends GameState {
     @type({ map: Player })
     players = new MapSchema<Player>();
     @type({ map: Item })
@@ -161,127 +230,44 @@ export class State extends Schema {
         if (!player){
             return;
         }
-        this.players[id].spriteX = (this.players[id].spriteX+1) % 3;
-        var vel = this.players[id].flagTimeout ? 8 : 10;
-        var radius = this.players[id].radius;
-        if (movement.x) {
-            var oldX=this.players[id].x;
-            this.players[id].x += movement.x * vel;
-            var newX = this.players[id].x ;
-            for (var item in this.items){
-                if (this.items[item].type=="block" && this.items[item].collission(this.players[id])){
-                    this.players[id].x = oldX;
-                }
-            }
-            if (newX < radius || newX > 1000-radius){
-                this.players[id].x = oldX;
-            }
-            if (movement.x>0){
-                this.players[id].spriteY = 2; 
-            }else{
-                this.players[id].spriteY = 1; 
-            }
-
-        } else if (movement.y) {
-            var oldY=this.players[id].y;
-            this.players[id].y += movement.y * vel;
-            var newY=this.players[id].y;
-            for (var item in this.items){
-                if (this.items[item].type=="block" && this.items[item].collission(this.players[id])){
-                    this.players[id].y = oldY;
-                    break;
-                }
-            }
-            if (newY < radius || newY > 1000-radius){
-                this.players[id].y = oldY;
-            }
-            if (movement.y>0){
-                this.players[id].spriteY = 0; 
-            }else{
-                this.players[id].spriteY = 3; 
-            }
-        }
-        if (this.items["flag"].collission(this.players[id])){
-            this.items["flag"].visible=false;
-            this.players[id].flagTimeout=FLAG_TIMEOUT;
-            this.players[id].stoleTimeout=STOLE_TIMEOUT;
+        if (this.items["flag"].collission(player)){
+            this.items["flag"].collisionWith(player);
         }
         for(var i=1;i<=4;i++){
-            if (!this.players[id].portalTimeout &&  this.items["portal"+i].collission(this.players[id])){
-                var newPortal = Math.floor(Math.random()*4)+1; 
-                this.players[id].x=this.items["portal"+newPortal].x;
-                this.players[id].y=this.items["portal"+newPortal].y;
-                this.players[id].portalTimeout=20;
-                console.log("Portal",i);
+            var portal = this.items["portal"+i];
+            if (!player.portalTimeout &&  portal.collission(player)){
+                portal.transportPlayer(player,this);
                 break;
             }
         }
+        player.move(movement.x,movement.y);
         for(var pid in this.players){
             if (pid!=id && this.players[id].collission(this.players[pid])){
-                if (this.players[id].flagTimeout && this.players[id].stoleTimeout==0){
-                    this.players[id].flagTimeout=0;
-                    this.players[pid].flagTimeout=FLAG_TIMEOUT;
-                    this.players[pid].stoleTimeout=STOLE_TIMEOUT;
-                }
-                if (this.players[pid].flagTimeout && this.players[pid].stoleTimeout==0){
-                    this.players[pid].flagTimeout=0;
-                    this.players[id].flagTimeout=FLAG_TIMEOUT;
-                    this.players[id].stoleTimeout=STOLE_TIMEOUT;
-                }
+                this.players[id].collisionWith(this.players[pid]);
             }
-            if (this.players[pid].stoleTimeout){
-                this.players[pid].stoleTimeout--;
-            }
-            if (this.players[pid].portalTimeout){
-                this.players[pid].portalTimeout--;
-            }
-            if (this.players[pid].flagTimeout){
-                this.players[pid].flagTimeout--;
-                if (this.players[pid].flagTimeout==0){
-                    this.positionObject(this.items["flag"],100,100,900,800);
-                    this.items[ "flag" ].visible=true;
-                }
-            }
-            if (this.players[id].flagTimeout){
-                this.players[id].points+=0.1;
-                this.players[id].label=""+Math.round(this.players[id].points)
-            }
+            this.players[pid].update(this);
         }
         this.items[ "flag" ].spriteX = (this.items[ "flag" ].spriteX+1) % 6;
     }
 
     addFlag (){
-        var newItem = new Item();
-        newItem.sprite = "flag1";
-        newItem.width = 60;
-        newItem.height = 60;
-        newItem.radius = 25;
-        newItem.type = "flag";
+        var newItem = new Flag();
         newItem.y = Math.floor(Math.random() * 100) + 100;
         this.items[ "flag" ] = newItem;
     }
 
     addPortal (id:number,x:number,y:number){
-        var newItem = new Item();
-        newItem.sprite = "portal1";
-        newItem.width = 60;
-        newItem.height = 60;
-        newItem.radius = 10;
+        var newItem = new Portal();
         newItem.x = x;
         newItem.y = y;
-        newItem.type = "portal";
+        newItem.portalNumber = id;
         this.items[ "portal"+id ] = newItem;
     }
 
     addBlock (){
-        var newItem = new Item();
-        newItem.sprite = "block1";
-        newItem.width = 40;
-        newItem.height = 40;
-        newItem.radius = 15;
+        var newItem = new Block();
         newItem.x = Math.floor(Math.random() * 800) + 100;
         newItem.y = Math.floor(Math.random() * 600) + 200;
-        newItem.type = "block";
         var index = Object.keys(this.items).length;
         this.items[ "block"+index ] = newItem;
     }
@@ -290,7 +276,6 @@ export class State extends Schema {
 export class ExampleRoom extends Room<State> {
     onInit (options) {
         console.log("ExampleRoom created!", options);
-
         this.setState(new State());
         this.state.addFlag(); 
         this.state.addPortal(1,80,80); 
