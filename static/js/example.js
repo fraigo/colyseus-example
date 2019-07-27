@@ -15,55 +15,9 @@
   var KEY_DOWN = 40;
 
   var FPS_RATE=Math.round(1000/30);
+  var KEY_RATE=75;
 
-  var sprites = {
-    sprite1 : {
-      file: "sprites/sprite1.png",
-      width: 115,
-      height: 115
-    },
-    sprite2 : {
-      file: "sprites/sprite2.png",
-      width: 115,
-      height: 115
-    },
-    sprite3 : {
-      file: "sprites/sprite3.png",
-      width: 115,
-      height: 115
-    },
-    sprite4 : {
-      file: "sprites/sprite4.png",
-      width: 115,
-      height: 115
-    },
-    flag1 : {
-      file: "sprites/flag1.png",
-      width: 63,
-      height: 61
-    },
-    block1 : {
-      file: "sprites/block1.png",
-      width: 40,
-      height: 36
-    },
-    portal1 : {
-      file: "sprites/portal1.png",
-      width: 105,
-      height: 100
-    },
-    bubble1 : {
-      file: "sprites/bubble1.png",
-      width: 300,
-      height: 300
-    },
-    back1 : {
-      file: "img/background1.png",
-      width: 350,
-      height: 350
-    }
-  }
-
+  
   for (var id in sprites){
     var img =  new Image();
     img.onload = function(){
@@ -101,7 +55,9 @@ var button_right = document.getElementById("move-right");
     }
     if (object.sprite && sprites[object.sprite]){
       var sp=sprites[object.sprite];
-      ctx.drawImage(sp.image,sp.width*object.spriteX,sp.height*object.spriteY,sp.width,sp.height,object.x-w/2,object.y-w/2,w,h);
+      var w1=w;
+      var h1=sp.height*(w/sp.width);
+      ctx.drawImage(sp.image,sp.width*object.spriteX,sp.height*object.spriteY,sp.width,sp.height,object.x-w/2,object.y-w/2,w1,h1);
     }
     if (object.type=="player"){
       if (object.flagTimeout){
@@ -109,7 +65,7 @@ var button_right = document.getElementById("move-right");
           
         }
         var sp=sprites["flag1"];
-        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x+w/2,object.y-w/2,w/2,h/2);
+        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x+w/3,object.y-w/2,w/2,h/2);
       }
       if (object.stoleTimeout){
         var sp=sprites["bubble1"];
@@ -249,7 +205,7 @@ var button_right = document.getElementById("move-right");
     } else if (key === 37) {
       left();
     }  
-    window.lastKeyEvent=window.setTimeout(keyDown,66,key);
+    window.lastKeyEvent=window.setTimeout(keyDown,KEY_RATE,key);
   }
 
   function cancelKey(){

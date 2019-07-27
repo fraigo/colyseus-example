@@ -28,15 +28,12 @@ export class Player extends Item {
     points = 0;
 
     collisionWith = function(player: Player){
-        console.log(player.id + " collition " + this.id);
         if (this.flagTimeout && this.stoleTimeout==0){
-            console.log(player.id + " stole " + this.id);
             this.flagTimeout=0;
             player.flagTimeout=FLAG_TIMEOUT;
             player.stoleTimeout=STOLE_TIMEOUT;
         }
         else if (player.flagTimeout && player.stoleTimeout==0){
-            console.log(this.id + " stole " + player.id);
             player.flagTimeout=0;
             this.flagTimeout=FLAG_TIMEOUT;
             this.stoleTimeout=STOLE_TIMEOUT;
@@ -64,15 +61,15 @@ export class Player extends Item {
         this.spriteX = (this.spriteX+1) % 3;
     }
 
-    move = function(x:number,y:number){
+    move = function(x:number,y:number,state:State){
         var vel = this.flagTimeout ? 8 : 10;
         var radius = this.radius;
         if (x) {
             var oldX=this.x;
             this.x += x * vel;
             var newX = this.x ;
-            for (var item in this.items){
-                if (this.items[item].type=="block" && this.items[item].collission(this)){
+            for (var item in state.items){
+                if (state.items[item].type=="block" && state.items[item].collission(this)){
                     this.x = oldX;
                 }
             }
@@ -89,8 +86,8 @@ export class Player extends Item {
             var oldY=this.y;
             this.y += y * vel;
             var newY=this.y;
-            for (var item in this.items){
-                if (this.items[item].type=="block" && this.items[item].collission(this)){
+            for (var item in state.items){
+                if (state.items[item].type=="block" && state.items[item].collission(this)){
                     this.y = oldY;
                     break;
                 }
@@ -111,6 +108,7 @@ export class Player extends Item {
 export class Portal extends Item {
 
     sprite = "portal1";
+    spriteY = 1;
     width = 60;
     height = 60;
     radius = 10;
@@ -119,18 +117,31 @@ export class Portal extends Item {
     @type("number")
     portalNumber = 0;
 
+    @type("number")
+    transferTimeout = 0;
+
     transportPlayer = function(player:Player, state:State){
         var portalNumber = this.portalNumber;
         while(portalNumber==this.portalNumber){
             portalNumber = Math.floor(Math.random()*4)+1;
         } 
         var newPortal = state.items["portal"+portalNumber];
+        newPortal.transferTimeout = 8;
+        this.transferTimeout = 8;
         player.x=newPortal.x;
         player.y=newPortal.y;
         player.portalTimeout=40;
     }
 
-
+    update = function(state:State){
+        if (this.transferTimeout){
+            this.spriteX = (this.spriteX+1) % 4;
+            this.transferTimeout--;
+        }else{
+            this.spriteX = 0;
+            this.spriteY = 1;
+        }
+    }
 
 }
 
@@ -156,6 +167,10 @@ export class Flag extends Item {
         this.visible=false;
         player.flagTimeout=FLAG_TIMEOUT;
         player.stoleTimeout=STOLE_TIMEOUT;
+    }
+
+    update = function(){
+        this.spriteX = (this.spriteX+1) % 6;
     }
 
 }
@@ -240,14 +255,16 @@ export class State extends GameState {
                 break;
             }
         }
-        player.move(movement.x,movement.y);
+        player.move(movement.x,movement.y,this);
+        for (var item in this.items){
+            this.items[item].update(this);
+        }
         for(var pid in this.players){
             if (pid!=id && this.players[id].collission(this.players[pid])){
                 this.players[id].collisionWith(this.players[pid]);
             }
             this.players[pid].update(this);
         }
-        this.items[ "flag" ].spriteX = (this.items[ "flag" ].spriteX+1) % 6;
     }
 
     addFlag (){
@@ -274,10 +291,9 @@ export class State extends GameState {
 }
 
 export class ExampleRoom extends Room<State> {
-    onInit (options) {
-        console.log("ExampleRoom created!", options);
+    onInit (options:any) {
+        console.log("Created!", options);
         this.setState(new State());
-        this.state.addFlag(); 
         this.state.addPortal(1,80,80); 
         this.state.addPortal(2,1000-80,80); 
         this.state.addPortal(3,80,1000-80); 
@@ -285,6 +301,7 @@ export class ExampleRoom extends Room<State> {
         for (var i=0;i<10; i++){
             this.state.addBlock(); 
         }
+        this.state.addFlag(); 
     }
 
     onJoin (client) {
@@ -296,12 +313,12 @@ export class ExampleRoom extends Room<State> {
     }
 
     onMessage (client, data) {
-        console.log("ExampleRoom received ", client.sessionId, ":", data);
+        console.log(client.sessionId, ":", data);
         this.state.movePlayer(client.sessionId, data);
     }
 
     onDispose () {
-        console.log("Dispose ExampleRoom");
+        console.log("Dispose");
     }
 
 }
