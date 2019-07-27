@@ -2,7 +2,8 @@ body {
     text-align: center; 
     padding:0px;
     margin: 0px;
-
+    background-color: #000;
+    color: #fff;
 }
 
 body, input, button, select, textarea {
@@ -46,8 +47,8 @@ body, input, button, select, textarea {
 }
 
 .btn-container{
-    width: 200px;
-    height: 200px;
+    width: 160px;
+    height: 160px;
     display: inline-block;
     vertical-align: bottom;
     background-image: url('/img/controls.png');

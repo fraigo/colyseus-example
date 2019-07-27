@@ -14,41 +14,53 @@
   var KEY_RIGHT = 39;
   var KEY_DOWN = 40;
 
+  var FPS_RATE=Math.round(1000/30);
+
   var sprites = {
     sprite1 : {
-      file: "sprite1.png",
+      file: "sprites/sprite1.png",
       width: 115,
       height: 115
     },
     sprite2 : {
-      file: "sprite2.png",
+      file: "sprites/sprite2.png",
       width: 115,
       height: 115
     },
     sprite3 : {
-      file: "sprite3.png",
+      file: "sprites/sprite3.png",
       width: 115,
       height: 115
     },
     sprite4 : {
-      file: "sprite4.png",
+      file: "sprites/sprite4.png",
       width: 115,
       height: 115
     },
     flag1 : {
-      file: "flag1.png",
+      file: "sprites/flag1.png",
       width: 63,
       height: 61
     },
     block1 : {
-      file: "block1.png",
+      file: "sprites/block1.png",
       width: 40,
       height: 36
     },
     portal1 : {
-      file: "portal1.png",
+      file: "sprites/portal1.png",
       width: 105,
       height: 100
+    },
+    bubble1 : {
+      file: "sprites/bubble1.png",
+      width: 300,
+      height: 300
+    },
+    back1 : {
+      file: "img/background1.png",
+      width: 350,
+      height: 350
     }
   }
 
@@ -57,7 +69,7 @@
     img.onload = function(){
       sprites[id].loaded = true;
     }
-    img.src="/sprites/"+sprites[id].file;
+    img.src="/"+sprites[id].file;
     sprites[id].image = img;
   }
 
@@ -93,10 +105,15 @@ var button_right = document.getElementById("move-right");
     }
     if (object.type=="player"){
       if (object.flagTimeout){
-        ctx.fillStyle = "#000";
-        ctx.font = "30 px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("🚩", object.x+w/2, object.y-h/2); 
+        if (object.flagTimeout<50){
+          
+        }
+        var sp=sprites["flag1"];
+        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x+w/2,object.y-w/2,w/2,h/2);
+      }
+      if (object.stoleTimeout){
+        var sp=sprites["bubble1"];
+        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x-w*0.6,object.y-w*0.6,w*1.2,h*1.2);
       }
     }
     if (object.label){
@@ -111,6 +128,8 @@ var button_right = document.getElementById("move-right");
     var ctx = canvas.getContext("2d");
     ctx.fillStyle = "#fff";
     ctx.fillRect(0,0,1000,1000);
+    var sp=sprites["back1"];
+    ctx.drawImage(sp.image,0,0,sp.width,sp.height,0,0,1000,1000);
     for(var $i=0; $i<items.length; $i++){
       var object = items[$i];
       drawObject(ctx,object);
@@ -126,13 +145,15 @@ var button_right = document.getElementById("move-right");
     room.state.players.onAdd = function(player, sessionId) {
       players[sessionId] = player;
       console.log("Player",player);
-      drawObjects();
+      window.clearTimeout(window.DRAW_TIMEOUT);
+      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
 
     room.state.items.onAdd = function(item, sessionId) {
       
       items.push(item);
-      drawObjects();
+      window.clearTimeout(window.DRAW_TIMEOUT);
+      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
 
     room.state.players.onRemove = function(player, sessionId) {
@@ -140,7 +161,8 @@ var button_right = document.getElementById("move-right");
     }
 
     room.state.players.onChange = function (player, sessionId) {
-      drawObjects();
+      window.clearTimeout(window.DRAW_TIMEOUT);
+      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
   })
 

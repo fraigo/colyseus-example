@@ -2,6 +2,8 @@ import { Room } from "colyseus";
 import { Schema, type, MapSchema } from "@colyseus/schema";
 
 var colors = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
+var FLAG_TIMEOUT = 250;
+var STOLE_TIMEOUT = 30;
 
 export class Item extends Schema {
     @type("number")
@@ -74,13 +76,13 @@ export class Player extends Item {
     height = 60;
     radius = 25;
     x = Math.floor(Math.random() * 800) + 100;
-    y = Math.floor(Math.random() * 100) + 700;
-
-    @type("boolean")
-    flagTimeout = false;
+    y = Math.floor(Math.random() * 100) + 800;
 
     @type("number")
-    timeout = 0;
+    flagTimeout = 0;
+
+    @type("number")
+    stoleTimeout = 0;
 
     @type("number")
     points = 0;
@@ -127,13 +129,28 @@ export class State extends Schema {
             return;
         }
         if (this.players[id].flagTimeout){
-            this.items[ "flag" ].x=Math.floor(Math.random() * 800) + 100;
-            this.items[ "flag" ].y=Math.floor(Math.random() * 200) + 100;
+            this.positionObject(this.items["flag"],100,100,900,800);
             this.items[ "flag" ].visible=true;
         }
         this.playerSlots[this.players[id].index]=false;
         delete this.players[id];
         this.playerCount--;
+    }
+
+    positionObject(obj: Item,x1:number,y1:number,x2:number,y2:number) {
+        var ok=false;
+        while (!ok){
+            ok=true;
+            obj.x=Math.floor(Math.random() * (x2-x1)) + x1;
+            obj.y=Math.floor(Math.random() * (y2-y1)) + y1;
+            for(var item in this.items){
+                if (this.items[item].collission(obj)){
+                    console.log("Failed "+obj.x+":"+obj.y);
+                    ok = false;
+                    break;
+                }
+            }
+        }
     }
 
     movePlayer (id: string, movement: any) {
@@ -186,7 +203,8 @@ export class State extends Schema {
         }
         if (this.items["flag"].collission(this.players[id])){
             this.items["flag"].visible=false;
-            this.players[id].flagTimeout=500;
+            this.players[id].flagTimeout=FLAG_TIMEOUT;
+            this.players[id].stoleTimeout=STOLE_TIMEOUT;
         }
         for(var i=1;i<=4;i++){
             if (!this.players[id].portalTimeout &&  this.items["portal"+i].collission(this.players[id])){
@@ -200,19 +218,19 @@ export class State extends Schema {
         }
         for(var pid in this.players){
             if (pid!=id && this.players[id].collission(this.players[pid])){
-                if (this.players[id].flagTimeout && this.players[id].timeout==0){
+                if (this.players[id].flagTimeout && this.players[id].stoleTimeout==0){
                     this.players[id].flagTimeout=0;
-                    this.players[pid].flagTimeout=500;
-                    this.players[pid].timeout=50;
+                    this.players[pid].flagTimeout=FLAG_TIMEOUT;
+                    this.players[pid].stoleTimeout=STOLE_TIMEOUT;
                 }
-                if (this.players[pid].flagTimeout && this.players[pid].timeout==0){
+                if (this.players[pid].flagTimeout && this.players[pid].stoleTimeout==0){
                     this.players[pid].flagTimeout=0;
-                    this.players[id].flagTimeout=500;
-                    this.players[id].timeout=50;
+                    this.players[id].flagTimeout=FLAG_TIMEOUT;
+                    this.players[id].stoleTimeout=STOLE_TIMEOUT;
                 }
             }
-            if (this.players[pid].timeout){
-                this.players[pid].timeout--;
+            if (this.players[pid].stoleTimeout){
+                this.players[pid].stoleTimeout--;
             }
             if (this.players[pid].portalTimeout){
                 this.players[pid].portalTimeout--;
@@ -220,8 +238,7 @@ export class State extends Schema {
             if (this.players[pid].flagTimeout){
                 this.players[pid].flagTimeout--;
                 if (this.players[pid].flagTimeout==0){
-                    this.items[ "flag" ].x=Math.floor(Math.random() * 800) + 100;
-                    this.items[ "flag" ].y=Math.floor(Math.random() * 200) + 100;
+                    this.positionObject(this.items["flag"],100,100,900,800);
                     this.items[ "flag" ].visible=true;
                 }
             }
@@ -262,7 +279,7 @@ export class State extends Schema {
         newItem.width = 40;
         newItem.height = 40;
         newItem.radius = 15;
-        newItem.x = Math.floor(Math.random() * 700) + 200;
+        newItem.x = Math.floor(Math.random() * 800) + 100;
         newItem.y = Math.floor(Math.random() * 600) + 200;
         newItem.type = "block";
         var index = Object.keys(this.items).length;
