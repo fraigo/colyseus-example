@@ -35,6 +35,11 @@ var button_down = document.getElementById("move-down");
 var button_left = document.getElementById("move-left");
 var button_right = document.getElementById("move-right");
 
+  function drawSprite(ctx,sp,sx,sy,bounds,ox,oy){
+    var w1 = bounds.width;
+    var h1 = sp.height*(w1/sp.width);
+    ctx.drawImage(sp.image,sp.width*sx,sp.height*sy,sp.width,sp.height,ox+bounds.x-w1/2,oy+bounds.y-w1/2,w1,h1);
+  }
 
   function drawObject(ctx,object){
     ctx.beginPath();
@@ -57,19 +62,13 @@ var button_right = document.getElementById("move-right");
       var sp=sprites[object.sprite];
       var w1=w;
       var h1=sp.height*(w/sp.width);
-      ctx.drawImage(sp.image,sp.width*object.spriteX,sp.height*object.spriteY,sp.width,sp.height,object.x-w/2,object.y-w/2,w1,h1);
+      drawSprite(ctx,sp,object.spriteX,object.spriteY,object,0,0);
     }
-    if (object.type=="player"){
-      if (object.flagTimeout){
-        if (object.flagTimeout<50){
-          
-        }
-        var sp=sprites["flag1"];
-        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x+w/3,object.y-w/2,w/2,h/2);
-      }
-      if (object.stoleTimeout){
-        var sp=sprites["bubble1"];
-        ctx.drawImage(sp.image,sp.width*0,sp.height*0,sp.width,sp.height,object.x-w*0.6,object.y-w*0.6,w*1.2,h*1.2);
+   if (object.items){
+      for(var idx in object.items){
+        var obj=object.items[idx];
+        var sp=sprites[obj.sprite];
+        drawSprite(ctx,sp,obj.spriteX,obj.spriteY,obj,object.x,object.y);  
       }
     }
     if (object.label){
@@ -97,6 +96,7 @@ var button_right = document.getElementById("move-right");
   }
 
   room.onJoin.add(function() {
+    
     // listen to patches coming from the server
     room.state.players.onAdd = function(player, sessionId) {
       players[sessionId] = player;

@@ -12,10 +12,10 @@ export class Item extends Schema {
     index = 0;
     
     @type("number")
-    x = Math.floor(Math.random() * 800) + 100;
+    x = 0;
 
     @type("number")
-    y = Math.floor(Math.random() * 700) + 200;
+    y = 0;
 
     @type("number")
     radius = 10;
@@ -52,6 +52,14 @@ export class Item extends Schema {
     
     @type("number")
     spriteY = 0;
+
+    init (options:any) {
+        if (options){
+            for(var idx in options){
+                this[idx] = options[idx];
+            }    
+        }
+    }
 
 
     collission = function(item: Item){

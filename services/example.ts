@@ -5,6 +5,8 @@ import { Item, GameState } from "./common/Item";
 var COLORS = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
 var FLAG_TIMEOUT = 250;
 var STOLE_TIMEOUT = 50;
+var DEBUG = false;
+var WIN_POINTS = 5;
 
 export class Player extends Item {
     
@@ -26,6 +28,9 @@ export class Player extends Item {
 
     @type("number")
     points = 0;
+
+    @type({ map: Item})
+    items = new MapSchema<Item>();
 
     collisionWith = function(player: Player){
         if (this.flagTimeout && this.stoleTimeout==0){
@@ -57,6 +62,36 @@ export class Player extends Item {
         if (this.flagTimeout){
             this.points+=0.1;
             this.label=""+Math.round(this.points)
+            var obj=this.items["flag"];
+            if (!obj){
+                obj=new Item();
+                obj.init({
+                    sprite:"flag1",
+                    width:Math.round(this.width/2),
+                    height:Math.round(this.height/2)
+                });    
+                this.items["flag"]=obj;
+            }
+            obj.x=Math.round(this.width/2);
+            obj.y=-Math.round(this.height/2);
+        }else{
+            delete this.items["flag"];
+        }
+        if (this.stoleTimeout){
+            var obj=this.items["bubble"];
+            if (!obj){
+                obj=new Item();
+                obj.init({
+                    sprite:"bubble1",
+                    width:Math.round(this.width*1.2),
+                    height:Math.round(this.height*1.2)
+                })
+                this.items["bubble"]=obj;
+            }
+            obj.x=0;
+            obj.y=0;
+        }else{
+            delete this.items["bubble"];
         }
         this.spriteX = (this.spriteX+1) % 3;
     }
@@ -181,16 +216,25 @@ export class State extends GameState {
     @type({ map: Item })
     items = new MapSchema<Item>();
 
+    STATE_START = 0;
+    STATE_PLAYING = 1;
+    STATE_FINISH = 2;
+
     playerCount = 0;
     itemCount = 0;
     maxPlayers = 4;
     minPlayers = 1;
     playerSlots = [];
+    state = this.STATE_START;
 
     createPlayer (id: string) {
+        if (this.state == this.STATE_FINISH){
+            return;
+        }
         if (this.playerCount>=this.maxPlayers){
             return;
         }
+        this.state = this.STATE_PLAYING;
         var index = this.playerCount;
         for(var i=0;i<this.maxPlayers;i++){
             if (!this.playerSlots[i]){
@@ -198,7 +242,6 @@ export class State extends GameState {
                 break;
             }
         }
-        console.log("New slot",index,this.playerCount);
         var newItem = new Player();
         newItem.index =  index;
         newItem.label = "P" + index;
@@ -206,6 +249,7 @@ export class State extends GameState {
         this.players[id] = newItem;
         this.playerSlots[index] = true;
         this.playerCount++;
+        console.log("New player",index,this.playerCount);
     }
 
     removePlayer (id: string) {
@@ -223,13 +267,18 @@ export class State extends GameState {
 
     positionObject(obj: Item,x1:number,y1:number,x2:number,y2:number) {
         var ok=false;
+        var retries=10;
         while (!ok){
             ok=true;
+            retries--;
+            if (retries==0){
+                obj.visible=false;
+                break;
+            }
             obj.x=Math.floor(Math.random() * (x2-x1)) + x1;
             obj.y=Math.floor(Math.random() * (y2-y1)) + y1;
             for(var item in this.items){
-                if (this.items[item].collission(obj)){
-                    console.log("Failed "+obj.x+":"+obj.y);
+                if (obj.id!=this.items[item].id && this.items[item].collission(obj)){
                     ok = false;
                     break;
                 }
@@ -238,6 +287,9 @@ export class State extends GameState {
     }
 
     movePlayer (id: string, movement: any) {
+        if (this.state != this.STATE_PLAYING){
+            return;
+        }
         if (this.playerCount<this.minPlayers){
             return;
         }
@@ -260,17 +312,26 @@ export class State extends GameState {
             this.items[item].update(this);
         }
         for(var pid in this.players){
+            var p1=this.players[pid];
             if (pid!=id && this.players[id].collission(this.players[pid])){
                 this.players[id].collisionWith(this.players[pid]);
             }
             this.players[pid].update(this);
+            if (this.players[pid].points>=WIN_POINTS){
+                this.state = this.STATE_FINISH;
+                this.players[pid].x=500;
+                this.players[pid].y=500;
+                this.players[pid].radius=100;
+                this.players[pid].bgcolor="#fff";
+                this.players[pid].label="Winner";
+            }
         }
     }
 
     addFlag (){
         var newItem = new Flag();
-        newItem.y = Math.floor(Math.random() * 100) + 100;
         this.items[ "flag" ] = newItem;
+        this.positionObject(newItem,150,100,850,250);
     }
 
     addPortal (id:number,x:number,y:number){
@@ -313,7 +374,9 @@ export class ExampleRoom extends Room<State> {
     }
 
     onMessage (client, data) {
-        console.log(client.sessionId, ":", data);
+        if (DEBUG) {
+            console.log(client.sessionId, ":", data);
+        }
         this.state.movePlayer(client.sessionId, data);
     }
 
