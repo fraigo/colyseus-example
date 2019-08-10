@@ -6,7 +6,7 @@ var COLORS = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
 var FLAG_TIMEOUT = 250;
 var STOLE_TIMEOUT = 50;
 var DEBUG = false;
-var WIN_POINTS = 5;
+var WIN_POINTS = 200;
 
 export class Player extends Item {
     
