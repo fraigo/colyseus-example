@@ -1,10 +1,42 @@
-  var host = window.document.location.host.replace(/:.*/, '');
+var canvas = document.getElementById("game");
+var host = window.document.location.host.replace(/:.*/, '');
+var client = new Colyseus.Client(location.protocol.replace("http", "ws") + host + (location.port ? ':' + location.port : ''));
 
-  var client = new Colyseus.Client(location.protocol.replace("http", "ws") + host + (location.port ? ':' + location.port : ''));
-  var room = client.join("example");
+client.onOpen.add(function() {
+  client.getAvailableRooms('create_or_join', function(rooms, err) {
+    console.log("Available rooms",rooms);
+    if (rooms.length==0){
 
+    }
+  });
+});
+
+var spritesLeft = Object.keys(sprites).length; 
+for (var id in sprites){
+  var img =  new Image();
+  img.onload = function(){
+    sprites[id].loaded = true;
+    spritesLeft--;
+    if (spritesLeft==0){
+      //joinGame("example");
+    }
+  }
+  img.src="/"+sprites[id].file;
+  sprites[id].image = img;
+}
+
+
+function selectGame(rooms){
+  
+}
+
+
+function joinGame(name){
+  console.log("Joining game ",name)
+  var room = client.join(name);
+
+  
   var players = {};
-  var colors = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
 
   var items = [];
   var PI2 = 2* Math.PI;
@@ -14,26 +46,14 @@
   var KEY_RIGHT = 39;
   var KEY_DOWN = 40;
 
-  var FPS_RATE=Math.round(1000/30);
+  var FRAME_RATE=30;
+  var FPS_RATE=Math.round(1000/FRAME_RATE);
   var KEY_RATE=75;
 
-  
-  for (var id in sprites){
-    var img =  new Image();
-    img.onload = function(){
-      sprites[id].loaded = true;
-    }
-    img.src="/"+sprites[id].file;
-    sprites[id].image = img;
-  }
-
-  
-
-var canvas = document.getElementById("game");
-var button_up = document.getElementById("move-up");
-var button_down = document.getElementById("move-down");
-var button_left = document.getElementById("move-left");
-var button_right = document.getElementById("move-right");
+  var button_up = document.getElementById("move-up");
+  var button_down = document.getElementById("move-down");
+  var button_left = document.getElementById("move-left");
+  var button_right = document.getElementById("move-right");
 
   function drawSprite(ctx,sp,sx,sy,bounds,ox,oy){
     var w1 = bounds.width;
@@ -46,7 +66,6 @@ var button_right = document.getElementById("move-right");
     if (!object.visible){
       return;
     }
-    //console.log("Draw",object);
     var w=object.width?object.width:object.radius*2;
     var h=object.height?object.height:object.radius*2;
     if (object.radius && object.bgcolor){
@@ -64,7 +83,7 @@ var button_right = document.getElementById("move-right");
       var h1=sp.height*(w/sp.width);
       drawSprite(ctx,sp,object.spriteX,object.spriteY,object,0,0);
     }
-   if (object.items){
+    if (object.items){
       for(var idx in object.items){
         var obj=object.items[idx];
         var sp=sprites[obj.sprite];
@@ -89,11 +108,12 @@ var button_right = document.getElementById("move-right");
       var object = items[$i];
       drawObject(ctx,object);
     }
-    for(var $index in this.players){
-      var object = this.players[$index];
+    for(var $index in players){
+      var object = players[$index];
       drawObject(ctx,object);
     }
   }
+
 
   room.onJoin.add(function() {
     
@@ -104,32 +124,32 @@ var button_right = document.getElementById("move-right");
       window.clearTimeout(window.DRAW_TIMEOUT);
       window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
-
+  
     room.state.items.onAdd = function(item, sessionId) {
       
       items.push(item);
       window.clearTimeout(window.DRAW_TIMEOUT);
       window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
-
+  
     room.state.players.onRemove = function(player, sessionId) {
       delete players[sessionId];
     }
-
+  
     room.state.players.onChange = function (player, sessionId) {
       window.clearTimeout(window.DRAW_TIMEOUT);
       window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
   })
-
+  
   window.addEventListener("keydown", function (e) {
     keyDown(e.which);
   })
-
+  
   window.addEventListener("keyup", function (e) {
     cancelKey();
   })
-
+  
   button_up.addEventListener("mousedown", function (e) {
     keyDown(KEY_UP);
   })
@@ -142,13 +162,13 @@ var button_right = document.getElementById("move-right");
   button_right.addEventListener("mousedown", function (e) {
     keyDown(KEY_RIGHT);
   })
-
+  
   canvas.addEventListener("mousedown", function (e) {
     var px=e.offsetX*1000/canvas.clientWidth;
     var py=e.offsetY*1000/canvas.clientHeight;
     var d1= (px/py)>1;
     var d2= (px/(1000-py))>1;
-    console.log("Mouse", px, py, d1,d2, e);
+    //console.log("Mouse", px, py, d1,d2, e);
     if (d1 && d2){
       keyDown(KEY_RIGHT);
     }
@@ -162,11 +182,11 @@ var button_right = document.getElementById("move-right");
       keyDown(KEY_DOWN);
     }
   })
-
+  
   canvas.addEventListener("mouseup", function (e) {
     //cancelKey();
   })
-
+  
   canvas.addEventListener("touchstart", function (e) {
     var originX=e.targetTouches[0].clientX-canvas.offsetLeft;
     var originY=e.targetTouches[0].clientY-canvas.offsetTop;
@@ -187,7 +207,7 @@ var button_right = document.getElementById("move-right");
       keyDown(KEY_DOWN);
     }
   })
-
+  
   canvas.addEventListener("touchend", function (e) {
     //cancelKey();
   })
@@ -198,35 +218,38 @@ var button_right = document.getElementById("move-right");
       up();
     } else if (key=== 39) {
       right();
-
+  
     } else if (key === 40) {
       down();
-
+  
     } else if (key === 37) {
       left();
     }  
     window.lastKeyEvent=window.setTimeout(keyDown,KEY_RATE,key);
   }
-
+  
   function cancelKey(){
     if (window.lastKeyEvent){
       window.clearTimeout(window.lastKeyEvent);
     }
   }
-
-
+  
+  
   function up () {
     room.send({ y: -1 });
   }
-
+  
   function right () {
     room.send({ x: 1 });
   }
-
+  
   function down () {
     room.send({ y: 1 })
   }
-
+  
   function left () {
     room.send({ x: -1 })
   }
+}
+
+joinGame("example");
