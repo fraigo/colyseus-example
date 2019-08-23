@@ -1,14 +1,10 @@
 var canvas = document.getElementById("game");
 var host = window.document.location.host.replace(/:.*/, '');
 var client = new Colyseus.Client(location.protocol.replace("http", "ws") + host + (location.port ? ':' + location.port : ''));
+var currentRoom = '';
 
 client.onOpen.add(function() {
-  client.getAvailableRooms('create_or_join', function(rooms, err) {
-    console.log("Available rooms",rooms);
-    if (rooms.length==0){
-
-    }
-  });
+  showRooms();
 });
 
 var spritesLeft = Object.keys(sprites).length; 
@@ -25,16 +21,33 @@ for (var id in sprites){
   sprites[id].image = img;
 }
 
+function showRooms(){
+  document.querySelector("#game-ui").style.display='';
+  client.getAvailableRooms('example', function(rooms, err) {
+    if (rooms.length==0){
 
-function selectGame(rooms){
-  
+    }
+    var items = rooms.map(function(room){
+      return "<button onclick=selectGame('"+room.roomId+"') "+(room.clients==room.maxClients?'disabled':'')+" >"+room.roomId+" ("+room.clients+"/"+room.maxClients+")</button>"
+    })
+    items.push("<button onclick=createGame() >Create Game</div>")
+    document.querySelector("#game-ui .ui-selection").innerHTML=(items.join("\n"))
+  });
 }
 
+function createGame(){
+  var room = client.join("example",{create:true})
+  joinRoom(room)
+  document.querySelector("#game-ui").style.display='none'
+}
 
-function joinGame(name){
-  console.log("Joining game ",name)
-  var room = client.join(name);
+function selectGame(id){
+  var room = client.join("example",{id:id})
+  joinRoom(room)
+  document.querySelector("#game-ui").style.display='none'
+}
 
+function joinRoom(room){
   
   var players = {};
 
@@ -112,11 +125,17 @@ function joinGame(name){
       var object = players[$index];
       drawObject(ctx,object);
     }
+    ctx.fillStyle = "#fff";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(room.id,500,30);
   }
 
 
   room.onJoin.add(function() {
-    
+    console.log("Joined to game",room.id);
+
+
     // listen to patches coming from the server
     room.state.players.onAdd = function(player, sessionId) {
       players[sessionId] = player;
@@ -252,4 +271,3 @@ function joinGame(name){
   }
 }
 
-joinGame("example");

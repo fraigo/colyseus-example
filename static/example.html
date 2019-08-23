@@ -6,10 +6,18 @@
     <!-- colyseus.js client -->
     <script type="text/javascript" src="js/colyseus.js"></script>
     <link rel="stylesheet" href="css/example.css">
+    <title>Multiplayer Game Example</title>
   </head>
   <body class="no-selection">
     <div id="canvas-container">
       <canvas id="game" width="1000" height="1000" ></canvas>
+      <div id="game-ui">
+        <div class="ui-container">
+            <h3>Select game</h3>
+            <div class="ui-selection">
+            </div>
+        </div>
+      </div>
       <div id="move-controls" class="btn-container">
         <div class="btn" id="move-up"><span> </span></div>
         <div class="btn" id="move-left"><span> </span></div><div class="btn" id="move-right"><span> </span></div>

@@ -352,6 +352,9 @@ export class State extends GameState {
 }
 
 export class ExampleRoom extends Room<State> {
+    
+    maxClients = 4;
+
     onInit (options:any) {
         console.log("Created!", options);
         this.setState(new State());
@@ -367,6 +370,15 @@ export class ExampleRoom extends Room<State> {
 
     onJoin (client) {
         this.state.createPlayer(client.sessionId);
+    }
+
+    requestJoin (options, isNewRoom: boolean) {
+        if (options.id && options.id!=this.roomId){
+            return false;
+        }
+        return (options.create)
+            ? (options.create && isNewRoom)
+            : this.clients.length > 0;
     }
 
     onLeave (client) {
