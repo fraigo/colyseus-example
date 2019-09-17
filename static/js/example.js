@@ -4,6 +4,7 @@ var client = new Colyseus.Client(location.protocol.replace("http", "ws") + host 
 var currentRoom = '';
 
 client.onOpen.add(function() {
+  document.querySelector("#game-ui").style.display='';
   showRooms();
 });
 
@@ -22,29 +23,40 @@ for (var id in sprites){
 }
 
 function showRooms(){
-  document.querySelector("#game-ui").style.display='';
   client.getAvailableRooms('example', function(rooms, err) {
     if (rooms.length==0){
 
     }
-    var items = rooms.map(function(room){
-      return "<button onclick=selectGame('"+room.roomId+"') "+(room.clients==room.maxClients?'disabled':'')+" >"+room.roomId+" ("+room.clients+"/"+room.maxClients+")</button>"
+    var items = rooms
+    .filter(function(room){
+      return room.clients<room.maxClients && room.metadata.opened;
+    })
+    .map(function(room){
+      return "<button onclick=selectGame('"+room.roomId+"') >"+room.roomId+" ("+room.clients+"/"+room.maxClients+")</button>"
     })
     items.push("<button onclick=createGame() >Create Game</div>")
     document.querySelector("#game-ui .ui-selection").innerHTML=(items.join("\n"))
   });
+  setTimeout(showRooms,3000);
 }
 
+var currentRoom;
+
 function createGame(){
-  var room = client.join("example",{create:true})
-  joinRoom(room)
+  currentRoom= client.join("example",{create:true})
+  joinRoom(currentRoom)
   document.querySelector("#game-ui").style.display='none'
 }
 
 function selectGame(id){
-  var room = client.join("example",{id:id})
-  joinRoom(room)
+  currentRoom= client.join("example",{id:id})
+  joinRoom(currentRoom)
   document.querySelector("#game-ui").style.display='none'
+}
+
+function sendIdleKey(room){
+  room.send({idle:1})
+  window.setTimeout(sendIdleKey,100,room);
 }
 
 function joinRoom(room){
@@ -67,6 +79,7 @@ function joinRoom(room){
   var button_down = document.getElementById("move-down");
   var button_left = document.getElementById("move-left");
   var button_right = document.getElementById("move-right");
+
 
   function drawSprite(ctx,sp,sx,sy,bounds,ox,oy){
     var w1 = bounds.width;
@@ -133,8 +146,8 @@ function joinRoom(room){
 
 
   room.onJoin.add(function() {
-    console.log("Joined to game",room.id);
-
+    console.log("Joined to game",room);
+    sendIdleKey(room);
 
     // listen to patches coming from the server
     room.state.players.onAdd = function(player, sessionId) {

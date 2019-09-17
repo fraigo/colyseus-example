@@ -1,6 +1,7 @@
 import { Room } from "colyseus";
 import { Schema, type, MapSchema } from "@colyseus/schema";
 import { Item, GameState } from "./common/Item";
+import { boolean } from "@colyseus/schema/lib/encoding/decode";
 
 var COLORS = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
 var FLAG_TIMEOUT = 250;
@@ -93,7 +94,6 @@ export class Player extends Item {
         }else{
             delete this.items["bubble"];
         }
-        this.spriteX = (this.spriteX+1) % 3;
     }
 
     move = function(x:number,y:number,state:State){
@@ -110,6 +110,8 @@ export class Player extends Item {
             }
             if (newX < radius || newX > 1000-radius){
                 this.x = oldX;
+            }else{
+                this.spriteX = (this.spriteX+1) % 3;
             }
             if (x>0){
                 this.spriteY = 2; 
@@ -129,6 +131,8 @@ export class Player extends Item {
             }
             if (newY < radius || newY > 1000-radius){
                 this.y = oldY;
+            }else{
+                this.spriteX = (this.spriteX+1) % 3;
             }
             if (y>0){
                 this.spriteY = 0; 
@@ -226,6 +230,7 @@ export class State extends GameState {
     minPlayers = 1;
     playerSlots = [];
     state = this.STATE_START;
+    opened = true;
 
     createPlayer (id: string) {
         if (this.state == this.STATE_FINISH){
@@ -286,7 +291,7 @@ export class State extends GameState {
         }
     }
 
-    movePlayer (id: string, movement: any) {
+    movePlayer (id: string, cmd: any) {
         if (this.state != this.STATE_PLAYING){
             return;
         }
@@ -307,7 +312,7 @@ export class State extends GameState {
                 break;
             }
         }
-        player.move(movement.x,movement.y,this);
+        player.move(cmd.x,cmd.y,this);
         for (var item in this.items){
             this.items[item].update(this);
         }
@@ -324,6 +329,7 @@ export class State extends GameState {
                 this.players[pid].radius=100;
                 this.players[pid].bgcolor="#fff";
                 this.players[pid].label="Winner";
+                this.opened = false;
             }
         }
     }
@@ -353,11 +359,19 @@ export class State extends GameState {
 
 export class ExampleRoom extends Room<State> {
     
+    metadata = {
+        opened: false,
+        name: ""
+    }
+
     maxClients = 4;
 
+    
     onInit (options:any) {
+        this.roomId =  "g" + (Math.round( Math.random() * 60000) + 4096).toString(16);
         console.log("Created!", options);
         this.setState(new State());
+        this.metadata.opened = true;
         this.state.addPortal(1,80,80); 
         this.state.addPortal(2,1000-80,80); 
         this.state.addPortal(3,80,1000-80); 
@@ -378,7 +392,7 @@ export class ExampleRoom extends Room<State> {
         }
         return (options.create)
             ? (options.create && isNewRoom)
-            : this.clients.length > 0;
+            : this.clients.length > 0 && this.metadata.opened;
     }
 
     onLeave (client) {
@@ -386,10 +400,11 @@ export class ExampleRoom extends Room<State> {
     }
 
     onMessage (client, data) {
-        if (DEBUG) {
+        if (DEBUG && data && !data.idle) {
             console.log(client.sessionId, ":", data);
         }
         this.state.movePlayer(client.sessionId, data);
+        this.metadata.opened = this.state.opened;
     }
 
     onDispose () {

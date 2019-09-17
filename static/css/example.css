@@ -61,16 +61,20 @@ body, input, button, select, textarea {
     max-width: 99%;
 }
 
-.btn-container{
-    width: 160px;
-    height: 160px;
-    display: inline-block;
-    vertical-align: bottom;
+#move-controls{
     background-image: url('/img/controls.png');
     background-size: cover;
     background-color: #eee;
     border-radius:99% 99%;
 }
+
+.btn-container{
+    width: 160px;
+    height: 160px;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
 .btn{
     font-size:30px;
     border:0px;
