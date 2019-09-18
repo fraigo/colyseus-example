@@ -1,5 +1,6 @@
 import { type } from "@colyseus/schema";
 import { Item } from "./Item";
+import { Config } from "./Config";
 import { Player } from "./Player";
 import { State } from "./State";
 
@@ -19,18 +20,19 @@ export class Portal extends Item {
     transferTimeout = 0;
 
     transportPlayer = function(player:Player, state:State){
-        console.log("Transport");
-
         var portalNumber = this.portalNumber;
         while(portalNumber==this.portalNumber){
             portalNumber = Math.floor(Math.random()*4)+1;
         } 
         var newPortal = state.items["portal"+portalNumber];
-        newPortal.transferTimeout = 1000;
-        this.transferTimeout = 1000;
+        newPortal.transferTimeout = Config.TRANSFER_PORTAL_DURATION;
+        this.transferTimeout = Config.TRANSFER_PORTAL_DURATION;
         player.x=newPortal.x;
         player.y=newPortal.y;
-        player.portalTimeout = 5000;
+        player.portalTimeout = Config.TIMEOUT_TRANSFER_PORTAL;
+        if (player.flagTimeout>0){
+            player.flagTimeout = Math.max(1,player.flagTimeout - Config.FLAG_TIMEOUT_PENALTY);
+        }
     }
 
     update = function(state:State){

@@ -121,7 +121,7 @@ function joinRoom(room){
       ctx.fillStyle = "#000";
       ctx.font = object.fontSize + "px Arial";
       ctx.textAlign = "center";
-      ctx.fillText(object.label, object.x, object.y-w/2);  
+      ctx.fillText(object.label, object.x, object.y-w/2-4);  
     }
   }
 
@@ -206,7 +206,7 @@ function joinRoom(room){
     var dy = 500+ py-myPlayer.y;
     var d1= (dx/dy)>1;
     var d2= (dx/(1000-dy))>1;
-    console.log("Mouse", dx, dy, dx/dy>1);
+    //console.log("Mouse", dx, dy, dx/dy>1);
     if (d1 && d2){
       keyDown(KEY_RIGHT);
     } 

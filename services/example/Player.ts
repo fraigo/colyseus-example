@@ -11,6 +11,8 @@ export class Player extends Item {
     radius = 25;
     x = Math.floor(Math.random() * 800) + 100;
     y = Math.floor(Math.random() * 100) + 800;
+    vx = 0;
+    vy = 0;
 
     @type("number")
     flagTimeout = 0;
@@ -91,12 +93,12 @@ export class Player extends Item {
         }
     }
 
-    move = function(x:number,y:number,state:State){
+    move = function(state:State){
         var vel = this.flagTimeout>0 ? state.diff/5 : state.diff/4;
         var radius = this.radius;
-        if (x) {
+        if (this.vx) {
             var oldX=this.x;
-            this.x += x * vel;
+            this.x += this.vx * vel;
             var newX = this.x ;
             for (var item in state.items){
                 if (state.items[item].type=="block" && state.items[item].collission(this)){
@@ -108,15 +110,16 @@ export class Player extends Item {
             }else{
                 this.spriteX = (this.spriteX+1) % 3;
             }
-            if (x>0){
+            if (this.vx>0){
                 this.spriteY = 2; 
             }else{
                 this.spriteY = 1; 
             }
 
-        } else if (y) {
+        } 
+        if (this.vy) {
             var oldY=this.y;
-            this.y += y * vel;
+            this.y += this.vy * vel;
             var newY=this.y;
             for (var item in state.items){
                 if (state.items[item].type=="block" && state.items[item].collission(this)){
@@ -129,7 +132,7 @@ export class Player extends Item {
             }else{
                 this.spriteX = (this.spriteX+1) % 3;
             }
-            if (y>0){
+            if (this.vy>0){
                 this.spriteY = 0; 
             }else{
                 this.spriteY = 3; 

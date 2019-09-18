@@ -118,12 +118,22 @@ export class State extends GameState {
                 break;
             }
         }
-        player.move(cmd.x,cmd.y,this);
+        if (cmd.x){
+            player.vx=cmd.x;
+        }else{
+            player.vx=0;
+        }
+        if (cmd.y){
+            player.vy=cmd.y;
+        }else{
+            player.vy=0;
+        }
         for (var item in this.items){
             this.items[item].update(this);
         }
         for(var pid in this.players){
             var p1=this.players[pid];
+            p1.move(this);
             if (pid!=id && this.players[id].collission(this.players[pid])){
                 this.players[id].collisionWith(this.players[pid]);
             }
