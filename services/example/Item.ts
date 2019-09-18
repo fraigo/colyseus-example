@@ -39,7 +39,7 @@ export class Item extends Schema {
     bgcolor = null;
 
     @type("number")
-    fontSize = 30;
+    fontSize = 24;
 
     @type("boolean")
     visible = true;

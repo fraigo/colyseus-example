@@ -67,7 +67,7 @@ export class Player extends Item {
                 });  
                 this.items["flag"]=obj;
             }
-            obj.spriteX = state.time24 % 6;  
+            obj.spriteX = state.time12 % 6;  
             obj.x=Math.round(this.width/2);
             obj.y=-Math.round(this.height/2);
         }else{

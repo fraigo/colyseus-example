@@ -62,6 +62,7 @@ function sendIdleKey(room){
 function joinRoom(room){
   
   var players = {};
+  var myPlayer;
 
   var items = [];
   var PI2 = 2* Math.PI;
@@ -152,7 +153,10 @@ function joinRoom(room){
     // listen to patches coming from the server
     room.state.players.onAdd = function(player, sessionId) {
       players[sessionId] = player;
-      console.log("Player",player);
+      console.log("Player",player.id, sessionId);
+      if (room.sessionId == sessionId){
+        myPlayer = player;
+      }
       window.clearTimeout(window.DRAW_TIMEOUT);
       window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
     }
@@ -198,12 +202,14 @@ function joinRoom(room){
   canvas.addEventListener("mousedown", function (e) {
     var px=e.offsetX*1000/canvas.clientWidth;
     var py=e.offsetY*1000/canvas.clientHeight;
-    var d1= (px/py)>1;
-    var d2= (px/(1000-py))>1;
-    //console.log("Mouse", px, py, d1,d2, e);
+    var dx = 500+ px-myPlayer.x;
+    var dy = 500+ py-myPlayer.y;
+    var d1= (dx/dy)>1;
+    var d2= (dx/(1000-dy))>1;
+    console.log("Mouse", dx, dy, dx/dy>1);
     if (d1 && d2){
       keyDown(KEY_RIGHT);
-    }
+    } 
     if (!d1 && !d2){
       keyDown(KEY_LEFT);
     }
