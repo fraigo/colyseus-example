@@ -1,5 +1,5 @@
-import { Schema, type, MapSchema } from "@colyseus/schema";
-import { State } from "../example";
+import { Schema, type } from "@colyseus/schema";
+import { State } from "./State"
 
 var itemCount = 0;
 
@@ -81,15 +81,10 @@ export class Item extends Schema {
 
     }
 
-    update = function(state:GameState){
+    update = function(state:State){
 
     }
 
 }
 
 
-
-export class GameState extends Schema {
-    
-
-}

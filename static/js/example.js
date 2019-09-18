@@ -56,7 +56,7 @@ function selectGame(id){
 
 function sendIdleKey(room){
   room.send({idle:1})
-  window.setTimeout(sendIdleKey,100,room);
+  window.setTimeout(sendIdleKey,40,room);
 }
 
 function joinRoom(room){
