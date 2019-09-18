@@ -19,16 +19,18 @@ export class Portal extends Item {
     transferTimeout = 0;
 
     transportPlayer = function(player:Player, state:State){
+        console.log("Transport");
+
         var portalNumber = this.portalNumber;
         while(portalNumber==this.portalNumber){
             portalNumber = Math.floor(Math.random()*4)+1;
         } 
         var newPortal = state.items["portal"+portalNumber];
-        newPortal.transferTimeout = 8;
+        newPortal.transferTimeout = 1000;
         this.transferTimeout = 1000;
         player.x=newPortal.x;
         player.y=newPortal.y;
-        player.portalTimeout=5000;
+        player.portalTimeout = 5000;
     }
 
     update = function(state:State){

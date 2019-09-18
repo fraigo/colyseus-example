@@ -113,7 +113,8 @@ export class State extends GameState {
         }
         for(var i=1;i<=4;i++){
             var portal = this.items["portal"+i];
-            if (player.portalTimeout>0 &&  portal.collission(player)){
+            console.log("Portal",player.portalTimeout);
+            if (player.portalTimeout<=0 &&  portal.collission(player)){
                 portal.transportPlayer(player,this);
                 break;
             }

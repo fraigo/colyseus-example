@@ -92,7 +92,7 @@ export class Player extends Item {
     }
 
     move = function(x:number,y:number,state:State){
-        var vel = this.flagTimeout>0 ? 8 : 10;
+        var vel = this.flagTimeout>0 ? state.diff/5 : state.diff/4;
         var radius = this.radius;
         if (x) {
             var oldX=this.x;

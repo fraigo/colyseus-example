@@ -1,6 +1,5 @@
 import { Room } from "colyseus";
-import { Item } from "./example/Item";
-import { GameState } from "./example/GameState";
+
 import { Config } from "./example/Config";
 import { State } from "./example/State";
 
