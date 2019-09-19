@@ -55,6 +55,7 @@ export class State extends GameState {
         this.playerSlots[index] = true;
         this.playerCount++;
         console.log("New player",index,this.playerCount);
+        this.positionObject(newItem,100,100,900,900);
     }
 
     removePlayer (id: string) {
@@ -164,10 +165,10 @@ export class State extends GameState {
         this.items[ "portal"+id ] = newItem;
     }
 
-    addBlock (){
+    addBlock (margin){
         var newItem = new Block();
-        newItem.x = Math.floor(Math.random() * 800) + 100;
-        newItem.y = Math.floor(Math.random() * 600) + 200;
+        var size = 1000 - margin*2;
+        this.positionObject(newItem,margin,margin,size,size);
         var index = Object.keys(this.items).length;
         this.items[ "block"+index ] = newItem;
     }

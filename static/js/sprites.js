@@ -40,8 +40,8 @@ var sprites = {
       height: 300
     },
     back1 : {
-      file: "img/background1.png",
-      width: 350,
-      height: 350
+      file: "img/background1.jpg",
+      width: 960,
+      height: 960
     }
   }

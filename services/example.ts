@@ -19,12 +19,13 @@ export class ExampleRoom extends Room<State> {
         console.log("Created!", options);
         this.setState(new State());
         this.metadata.opened = true;
-        this.state.addPortal(1,80,80); 
-        this.state.addPortal(2,1000-80,80); 
-        this.state.addPortal(3,80,1000-80); 
-        this.state.addPortal(4,1000-80,1000-80); 
+        var margin=Config.BLOCK_MARGIN;
+        this.state.addPortal(1,margin,margin); 
+        this.state.addPortal(2,1000-margin,margin); 
+        this.state.addPortal(3,margin,1000-margin); 
+        this.state.addPortal(4,1000-margin,1000-margin); 
         for (var i=0;i<10; i++){
-            this.state.addBlock(); 
+            this.state.addBlock(margin); 
         }
         this.state.addFlag(); 
     }

@@ -56,7 +56,50 @@ function selectGame(id){
 
 function sendIdleKey(room){
   room.send({idle:1})
-  window.setTimeout(sendIdleKey,40,room);
+  window.setTimeout(sendIdleKey,30,room);
+}
+
+function drawSprite(ctx,sp,sx,sy,bounds,ox,oy){
+  var w1 = bounds.width;
+  var h1 = sp.height*(w1/sp.width);
+  ctx.drawImage(sp.image,sp.width*sx,sp.height*sy,sp.width,sp.height,ox+bounds.x-w1/2,oy+bounds.y-w1/2,w1,h1);
+}
+
+function drawObject(ctx,object){
+  ctx.beginPath();
+  if (!object.visible){
+    return;
+  }
+  var w=object.width?object.width:object.radius*2;
+  var h=object.height?object.height:object.radius*2;
+  if (object.radius && object.bgcolor){
+    ctx.fillStyle = object.bgcolor;
+    ctx.arc(object.x, object.y, object.radius,0, PI2);
+    ctx.fill(); 
+  }
+  if (object.width*object.height && object.bgcolor){
+    ctx.fillStyle = object.bgcolor;
+    ctx.fillRect(object.x-object.width/2,object.y-object.height/2,object.width,object.height); 
+  }
+  if (object.sprite && sprites[object.sprite]){
+    var sp=sprites[object.sprite];
+    var w1=w;
+    var h1=sp.height*(w/sp.width);
+    drawSprite(ctx,sp,object.spriteX,object.spriteY,object,0,0);
+  }
+  if (object.items){
+    for(var idx in object.items){
+      var obj=object.items[idx];
+      var sp=sprites[obj.sprite];
+      drawSprite(ctx,sp,obj.spriteX,obj.spriteY,obj,object.x,object.y);  
+    }
+  }
+  if (object.label){
+    ctx.fillStyle = "#000";
+    ctx.font = object.fontSize + "px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(object.label, object.x, object.y-w/2-4);  
+  }
 }
 
 function joinRoom(room){
@@ -72,7 +115,7 @@ function joinRoom(room){
   var KEY_RIGHT = 39;
   var KEY_DOWN = 40;
 
-  var FRAME_RATE=30;
+  var FRAME_RATE=24;
   var FPS_RATE=Math.round(1000/FRAME_RATE);
   var KEY_RATE=75;
 
@@ -80,53 +123,13 @@ function joinRoom(room){
   var button_down = document.getElementById("move-down");
   var button_left = document.getElementById("move-left");
   var button_right = document.getElementById("move-right");
-
-
-  function drawSprite(ctx,sp,sx,sy,bounds,ox,oy){
-    var w1 = bounds.width;
-    var h1 = sp.height*(w1/sp.width);
-    ctx.drawImage(sp.image,sp.width*sx,sp.height*sy,sp.width,sp.height,ox+bounds.x-w1/2,oy+bounds.y-w1/2,w1,h1);
-  }
-
-  function drawObject(ctx,object){
-    ctx.beginPath();
-    if (!object.visible){
-      return;
-    }
-    var w=object.width?object.width:object.radius*2;
-    var h=object.height?object.height:object.radius*2;
-    if (object.radius && object.bgcolor){
-      ctx.fillStyle = object.bgcolor;
-      ctx.arc(object.x, object.y, object.radius,0, PI2);
-      ctx.fill(); 
-    }
-    if (object.width*object.height && object.bgcolor){
-      ctx.fillStyle = object.bgcolor;
-      ctx.fillRect(object.x-object.width/2,object.y-object.height/2,object.width,object.height); 
-    }
-    if (object.sprite && sprites[object.sprite]){
-      var sp=sprites[object.sprite];
-      var w1=w;
-      var h1=sp.height*(w/sp.width);
-      drawSprite(ctx,sp,object.spriteX,object.spriteY,object,0,0);
-    }
-    if (object.items){
-      for(var idx in object.items){
-        var obj=object.items[idx];
-        var sp=sprites[obj.sprite];
-        drawSprite(ctx,sp,obj.spriteX,obj.spriteY,obj,object.x,object.y);  
-      }
-    }
-    if (object.label){
-      ctx.fillStyle = "#000";
-      ctx.font = object.fontSize + "px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(object.label, object.x, object.y-w/2-4);  
-    }
-  }
+  
+  window.LAST_DRAW = (new Date()).getTime();
+  var ctx = canvas.getContext("2d");
 
   function drawObjects(){
-    var ctx = canvas.getContext("2d");
+    //window.PREV_DRAW = window.LAST_DRAW;
+    window.LAST_DRAW = (new Date()).getTime();
     ctx.fillStyle = "#fff";
     ctx.fillRect(0,0,1000,1000);
     var sp=sprites["back1"];
@@ -145,6 +148,12 @@ function joinRoom(room){
     ctx.fillText(room.id,500,30);
   }
 
+  function triggerDraw(){
+    window.clearTimeout(window.DRAW_TIMEOUT);
+    var diff = ((new Date()).getTime() - window.LAST_DRAW);
+    window.DRAW_TIMEOUT=setTimeout(drawObjects,Math.max(0,FPS_RATE - diff));
+  }
+
 
   room.onJoin.add(function() {
     console.log("Joined to game",room);
@@ -157,15 +166,13 @@ function joinRoom(room){
       if (room.sessionId == sessionId){
         myPlayer = player;
       }
-      window.clearTimeout(window.DRAW_TIMEOUT);
-      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
+      triggerDraw();
     }
   
     room.state.items.onAdd = function(item, sessionId) {
       
       items.push(item);
-      window.clearTimeout(window.DRAW_TIMEOUT);
-      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
+      triggerDraw();
     }
   
     room.state.players.onRemove = function(player, sessionId) {
@@ -173,8 +180,7 @@ function joinRoom(room){
     }
   
     room.state.players.onChange = function (player, sessionId) {
-      window.clearTimeout(window.DRAW_TIMEOUT);
-      window.DRAW_TIMEOUT=setTimeout(drawObjects,FPS_RATE);
+      triggerDraw();
     }
   })
   
