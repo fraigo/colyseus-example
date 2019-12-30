@@ -1,13 +1,13 @@
 var sprites = {
     sprite1 : {
-      file: "sprites/sprite1.png",
-      width: 115,
-      height: 115
+      file: "sprites/sprite01.png",
+      width: 64,
+      height: 64
     },
     sprite2 : {
-      file: "sprites/sprite2.png",
-      width: 115,
-      height: 115
+      file: "sprites/sprite02.png",
+      width: 64,
+      height: 64
     },
     sprite3 : {
       file: "sprites/sprite3.png",

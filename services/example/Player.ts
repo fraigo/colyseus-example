@@ -6,9 +6,9 @@ import { State } from "./State"
 export class Player extends Item {
     
     type = "player";
-    width = 60;
-    height = 60;
-    radius = 25;
+    width = 64;
+    height = 64;
+    radius = 30;
     x = Math.floor(Math.random() * 800) + 100;
     y = Math.floor(Math.random() * 100) + 800;
     vx = 0;
@@ -108,10 +108,10 @@ export class Player extends Item {
             if (newX < radius || newX > 1000-radius){
                 this.x = oldX;
             }else{
-                this.spriteX = (this.spriteX+1) % 3;
+                this.spriteX = (this.spriteX+1) % 8;
             }
             if (this.vx>0){
-                this.spriteY = 2; 
+                this.spriteY = 3; 
             }else{
                 this.spriteY = 1; 
             }
@@ -130,12 +130,12 @@ export class Player extends Item {
             if (newY < radius || newY > 1000-radius){
                 this.y = oldY;
             }else{
-                this.spriteX = (this.spriteX+1) % 3;
+                this.spriteX = (this.spriteX+1) % 8;
             }
             if (this.vy>0){
-                this.spriteY = 0; 
+                this.spriteY = 2; 
             }else{
-                this.spriteY = 3; 
+                this.spriteY = 0; 
             }
         }
     }
